@@ -1,3 +1,14 @@
+---
+title: TrackSplitter
+emoji: 🎛
+colorFrom: yellow
+colorTo: gray
+sdk: streamlit
+sdk_version: 1.35.0
+app_file: app.py
+pinned: false
+---
+
 # TrackSplitter
 
 **AI-powered audio stem separation in the browser.**  
@@ -111,11 +122,7 @@ streamlit run app.py
 
 Open `http://localhost:8501` in your browser.
 
-**To expose on a server:**
 
-```bash
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
-```
 
 ---
 
