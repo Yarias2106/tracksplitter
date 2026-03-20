@@ -108,15 +108,6 @@ If the download is interrupted, re-run the same command — it resumes automatic
 ```bash
 streamlit run app.py
 ```
-
-Open `http://localhost:8501` in your browser.
-
-**To expose on a server:**
-
-```bash
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
-```
-
 ---
 
 ## Performance
