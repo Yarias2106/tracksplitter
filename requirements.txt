@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────
+# TrackSplitter — requirements.txt
+# ─────────────────────────────────────────────
+
+# Interfaz
+streamlit>=1.35.0
+
+# Separación de audio (Demucs + dependencias)
+demucs>=4.0.1
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# Audio I/O
+soundfile>=0.12.1
+librosa>=0.10.1
+ffmpeg-python>=0.2.0
+
+# Utilidades
+numpy>=1.24.0
+pathlib2>=2.3.7
+
+# ─────────────────────────────────────────────
+# NOTA SOBRE PYTORCH CON GPU:
+# Si tienes GPU NVIDIA, instala la versión CUDA de PyTorch:
+#
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# Reemplaza cu121 por tu versión de CUDA (cu118, cu121, cu124).
+# Verifica tu versión con: nvidia-smi
+# ─────────────────────────────────────────────

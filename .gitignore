@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+.env/
+
+# Archivos temporales de audio
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.m4a
+tracksplitter_out_*/
+tracksplitter_*/
+
+# Audio generado en static (se crean en tiempo de ejecución)
+static/stems/*.wav
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Modelos descargados (pueden ser grandes)
+# Descomenta si no quieres incluirlos:
+# ~/.cache/torch/hub/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
