@@ -119,11 +119,14 @@ If the download is interrupted, re-run the same command — it resumes automatic
 ```bash
 streamlit run app.py
 ```
+<<<<<<< HEAD
 
 Open `http://localhost:8501` in your browser.
 
 
 
+=======
+>>>>>>> 780a19b10f3955601f076728c4451cadbefb2ebe
 ---
 
 ## Performance
