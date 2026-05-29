@@ -9,28 +9,40 @@ browser cache from serving stale audio after a new song is processed.
 import shutil
 import json
 import time
+import os
 from pathlib import Path
 import streamlit.components.v1 as components
 
-STATIC_DIR = Path(__file__).parent / "static" / "stems"
+BASE_DIR = Path(__file__).parent / "static" / "stems"
+
+
+def _cleanup_old_sessions(keep: int = 2):
+    """Remove all but the `keep` most recent session directories."""
+    dirs = sorted(
+        [d for d in BASE_DIR.iterdir() if d.is_dir()],
+        key=lambda d: d.name,
+        reverse=True,
+    )
+    for d in dirs[keep:]:
+        shutil.rmtree(d, ignore_errors=True)
 
 
 def prepare_static_stems(stem_paths: dict, session_ts: str) -> dict:
     """
-    Copy WAV files to static/stems/ with a unique timestamp suffix.
-    The browser always fetches fresh audio on every new session_ts.
+    Copy WAV files to a session-scoped subdirectory (static/stems/<ts>/).
+    Each session gets its own folder so old files are never locked.
+    Also prunes old sessions on each call.
     Returns { stem_name: relative_url }.
     """
-    STATIC_DIR.mkdir(parents=True, exist_ok=True)
-
-    for f in STATIC_DIR.glob("*.wav"):
-        f.unlink()
+    static_dir = BASE_DIR / session_ts
+    static_dir.mkdir(parents=True, exist_ok=True)
+    _cleanup_old_sessions()
 
     url_map = {}
     for stem_name, wav_path in stem_paths.items():
-        fname = f"{stem_name}_{session_ts}.wav"
-        shutil.copy2(wav_path, STATIC_DIR / fname)
-        url_map[stem_name] = f"app/static/stems/{fname}"
+        fname = f"{stem_name}.wav"
+        shutil.copy2(wav_path, static_dir / fname)
+        url_map[stem_name] = f"app/static/stems/{session_ts}/{fname}"
 
     return url_map
 

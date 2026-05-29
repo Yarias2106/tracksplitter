@@ -5,13 +5,14 @@ Industrial pro-audio aesthetic. Powered by Demucs (Meta AI Research).
 """
 
 import os
+import math
 import time
 import tempfile
 import zipfile
 import io as _io
 import streamlit as st
 from pathlib import Path
-from separator import MODELS, detect_device, separate_audio, get_stem_info, cleanup
+from separator import MODELS, detect_device, separate_audio, get_stem_info, cleanup, mix_stems
 from mixer_component import render_mixer
 
 # ─────────────────────────────────────────
@@ -279,6 +280,45 @@ html, body, [class*="css"] {
   color: var(--faint);
 }
 
+/* ── Mix export controls ── */
+.mix-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--ch-color, var(--border));
+  border-radius: 2px;
+}
+.mix-row-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  min-width: 70px;
+  color: var(--ch-color);
+}
+.mix-row .stSlider { flex: 1; }
+.mix-row .stSlider [data-testid="stThumbValue"] { display: none; }
+.mix-row-mute {
+  width: 28px; height: 28px;
+  border-radius: 2px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.mix-row-mute.active {
+  background: var(--border2);
+  color: var(--text);
+}
+
 /* ── Footer ── */
 .ts-footer {
   border-top: 1px solid var(--border);
@@ -484,6 +524,79 @@ with col_mixer:
             get_stem_info,
             st.session_state.session_ts,
         )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # ── Mix export ──────────────────────────
+        st.markdown('<div class="ts-label">Mix export</div>', unsafe_allow_html=True)
+
+        if "mix_volumes" not in st.session_state:
+            st.session_state.mix_volumes = {}
+
+        for stem_name in st.session_state.stem_paths:
+            info = get_stem_info(stem_name)
+
+            if stem_name not in st.session_state.mix_volumes:
+                st.session_state.mix_volumes[stem_name] = 100
+
+            c1, c2 = st.columns([4, 1.5])
+            with c1:
+                vol = st.slider(
+                    f"{info['label']}",
+                    0, 100,
+                    value=st.session_state.mix_volumes[stem_name],
+                    key=f"mx_vol_{stem_name}",
+                    label_visibility="collapsed",
+                )
+                st.session_state.mix_volumes[stem_name] = vol
+            with c2:
+                db = "-∞" if vol == 0 else f"{20 * math.log10(vol / 100):.1f}"
+                st.markdown(
+                    f"<div style='display:flex;align-items:center;gap:8px;"
+                    f"height:38px;'>"
+                    f"<span style='color:{info['color']};"
+                    f"font-family:Barlow Condensed,sans-serif;"
+                    f"font-size:13px;font-weight:700;"
+                    f"text-transform:uppercase;letter-spacing:1px;'>"
+                    f"{info['label']}</span>"
+                    f"<span style='color:var(--muted);font-size:10px;'>"
+                    f"{db} dB</span></div>",
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("Prepare mixed download", use_container_width=True):
+            vols = {
+                k: v / 100
+                for k, v in st.session_state.mix_volumes.items()
+            }
+
+            mixed_audio, sr = mix_stems(
+                st.session_state.stem_paths,
+                vols,
+                {},
+            )
+
+            if mixed_audio is not None:
+                import soundfile as sf
+                buf = _io.BytesIO()
+                sf.write(buf, mixed_audio, sr, format="WAV")
+                buf.seek(0)
+                st.session_state["mixed_wav_data"] = buf.getvalue()
+                st.session_state["mixed_wav_ready"] = True
+            else:
+                st.warning("All stems are at 0 — nothing to mix.")
+
+        if st.session_state.get("mixed_wav_ready"):
+            base = Path(st.session_state.processed_file or "track").stem
+            st.download_button(
+                label="Download mixed WAV",
+                data=st.session_state["mixed_wav_data"],
+                file_name=f"{base}_mixed.wav",
+                mime="audio/wav",
+                use_container_width=True,
+            )
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="ts-label">Export</div>', unsafe_allow_html=True)

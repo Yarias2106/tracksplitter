@@ -122,6 +122,57 @@ def get_stem_info(stem_name: str) -> dict:
     )
 
 
+def mix_stems(stem_paths: dict, volumes: dict, mute_flags: dict) -> tuple:
+    """
+    Mix multiple stems into a single audio array with per-stem gain and mute.
+
+    Args:
+        stem_paths: dict of stem_name -> WAV file path.
+        volumes:    dict of stem_name -> float gain (0.0 – 1.0).
+        mute_flags: dict of stem_name -> bool (True = muted).
+
+    Returns:
+        (numpy array, sample_rate) or (None, None) if all muted.
+    """
+    import numpy as np
+    import soundfile as sf
+
+    mixed = None
+    target_sr = None
+
+    for stem_name, wav_path in stem_paths.items():
+        if mute_flags.get(stem_name, False):
+            continue
+
+        data, sr = sf.read(wav_path)
+
+        if target_sr is None:
+            target_sr = sr
+            mixed = np.zeros_like(data, dtype=np.float64)
+        else:
+            if sr != target_sr:
+                import librosa
+                data = librosa.resample(data, orig_sr=sr, target_sr=target_sr)
+            if len(data) < len(mixed):
+                padded = np.zeros_like(mixed)
+                padded[:len(data)] = data
+                data = padded
+            elif len(data) > len(mixed):
+                data = data[:len(mixed)]
+
+        gain = volumes.get(stem_name, 1.0)
+        mixed += data * gain
+
+    if mixed is None:
+        return None, None
+
+    peak = np.max(np.abs(mixed))
+    if peak > 0.95:
+        mixed = mixed * (0.95 / peak)
+
+    return mixed.astype(np.float32), target_sr
+
+
 def cleanup(path: str):
     """Remove a temporary directory."""
     if os.path.isdir(path):
